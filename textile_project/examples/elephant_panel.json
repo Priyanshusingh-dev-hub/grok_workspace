@@ -1,0 +1,64 @@
+{
+  "name": "elephant_panel",
+  "size_inch": [
+    18,
+    9
+  ],
+  "dpi": 300,
+  "seed": 5,
+  "repeat": "panel",
+  "palette": {
+    "ground": "F1E6CF",
+    "maroon": "7A1F2B",
+    "teal": "2F6F6A",
+    "gold": "D4A03C"
+  },
+  "ground": "ground",
+  "layers": [
+    {
+      "layout": "side-border",
+      "band": 14,
+      "from": 0,
+      "teeth": 14,
+      "colors": [
+        "maroon",
+        "gold"
+      ]
+    },
+    {
+      "layout": "side-bel",
+      "band": 110,
+      "amplitude": 9,
+      "waves": 3,
+      "leaf": 13,
+      "colors": [
+        "teal",
+        "teal",
+        "maroon",
+        "gold"
+      ]
+    },
+    {
+      "layout": "panel-centre",
+      "rows": 1,
+      "motif": "haathi",
+      "size": 110,
+      "colors": [
+        "maroon",
+        "teal",
+        "gold",
+        "ground"
+      ]
+    },
+    {
+      "layout": "scatter",
+      "per_sq_inch": 0.6,
+      "min_gap": 30,
+      "motif": "dots",
+      "size": 3,
+      "colors": [
+        "gold"
+      ]
+    }
+  ]
+}

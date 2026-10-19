@@ -1,0 +1,67 @@
+{
+  "name": "floral_allover",
+  "dpi": 300,
+  "seed": 3,
+  "palette": {
+    "ground": "F4EDE0",
+    "rose": "C8476A",
+    "blush": "F2A7B5",
+    "gold": "D9A441",
+    "leaf": "4F7A52",
+    "olive": "8BA35A",
+    "maroon": "6B1F2E"
+  },
+  "ground": "ground",
+  "layers": [
+    {
+      "layout": "half-drop",
+      "cols": 3,
+      "rows": 3,
+      "motif": "phool",
+      "size": 60,
+      "colors": [
+        "rose",
+        "blush",
+        "gold",
+        "maroon"
+      ]
+    },
+    {
+      "layout": "scatter",
+      "per_sq_inch": 0.9,
+      "min_gap": 40,
+      "motif": "sprig",
+      "size": 34,
+      "colors": [
+        "leaf",
+        "olive",
+        "rose"
+      ]
+    },
+    {
+      "layout": "scatter",
+      "per_sq_inch": 1.2,
+      "min_gap": 22,
+      "motif": "patti",
+      "size": 15,
+      "colors": [
+        "olive",
+        "leaf"
+      ]
+    },
+    {
+      "layout": "scatter",
+      "per_sq_inch": 3,
+      "min_gap": 10,
+      "motif": "dots",
+      "size": 2,
+      "colors": [
+        "gold"
+      ]
+    }
+  ],
+  "size_px": [
+    3535,
+    3535
+  ]
+}

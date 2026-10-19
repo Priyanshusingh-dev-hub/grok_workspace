@@ -1,0 +1,59 @@
+{
+  "name": "indigo_buti",
+  "dpi": 300,
+  "seed": 7,
+  "palette": {
+    "indigo": "1B2A4A",
+    "cream": "F2E8CF",
+    "gold": "C9A227",
+    "sky": "8FB3D9",
+    "rust": "B5532E",
+    "leaf": "5E7C4A"
+  },
+  "ground": "indigo",
+  "layers": [
+    {
+      "layout": "half-drop",
+      "cols": 4,
+      "rows": 4,
+      "motif": "buti",
+      "size": 52,
+      "colors": [
+        "cream",
+        "rust",
+        "gold"
+      ]
+    },
+    {
+      "layout": "half-drop",
+      "cols": 4,
+      "rows": 4,
+      "shift": [
+        0.5,
+        0.25
+      ],
+      "motif": "sprig",
+      "size": 30,
+      "colors": [
+        "leaf",
+        "sky",
+        "cream"
+      ],
+      "rotate": -30
+    },
+    {
+      "layout": "scatter",
+      "per_sq_inch": 2.5,
+      "min_gap": 14,
+      "motif": "dots",
+      "size": 2.2,
+      "colors": [
+        "gold"
+      ]
+    }
+  ],
+  "size_px": [
+    3535,
+    3535
+  ]
+}

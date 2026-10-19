@@ -1,0 +1,58 @@
+# LoomLab — Master Task: "Reconstruct" mode (high-clarity, print-ready separation for ANY design)
+
+## 0. Context — read fully before coding
+LoomLab is textile **screen-printing colour-separation** software (Python). The owner is a textile printer, not a developer. The output is NOT a demo: the ink channels/films go to real screens, and printed together they must reproduce the source design.
+
+**Codebase:** use the attached zip `loomlab_code_e392b54.zip` (folder `textile_project/`) as the base. It is NEWER than GitHub `main` of https://github.com/Priyanshusingh-dev-hub/Textile-design-project.git (it contains `auto.py`, the channels-only PSD and the optional COMPOSITE, which are not pushed yet). If you use git, create a branch `grok/reconstruct`, commit the zip contents as a first commit "base: e392b54 snapshot", then do your work in further commits. Don't push to `main`, don't force-push, don't merge.
+
+Run: `cd textile_project && python -m pytest -q` (184 tests pass on the base — keep them all passing). CLI: `python -m textile <mode> <img> --out <dir> ...`.
+
+Existing modules you should READ and REUSE (don't duplicate): `number.py` (main numbering product — do NOT change its behaviour), `palette.py`, `edges.py` / `curves.py` / `vector.py` (contour + curve tools), `crisp.py`, `gradients.py` (per-pixel overprint tone solve), `spray.py`, `auto.py` (FLAT/LINE/SPRAY region split), `psdout.py` + `package_channels.py` (PSD/TIF channel export), `verify.py`.
+
+## 1. Owner requirements (all mandatory)
+1. **Generic process, not one design.** Nothing hard-coded to a particular image, colour or size. It must work on any textile design (flat, line-work, spray/airbrush, or a mix).
+2. **Reconstruct, don't copy pixels.** Low-res/JPEG input must not produce stair-step edges, colour bleeding (e.g. brown fringe between black and cream), blobby dots or blotchy gradients. Redraw the design like an artist.
+3. **Pen-tool clarity.** Every shape edge must look like a smooth Photoshop pen-tool vector path at 4x zoom — no jagged/torn pixels, no gaps or slivers between neighbouring inks. Real sharp tips/corners stay sharp.
+4. **Resolution never goes down.** Output >= source size; default render at 2x (option 3x/4x). If memory is tight, TILE with overlap — never downscale. Peak RAM must stay < 6 GB for a 5000x5000 source (machine has 15 GB, other jobs run).
+5. **Small detail is sacred.** Every small dot, thin line, vein and outline in the source must survive (count must match 100%). Too-thin-to-print elements get thickened to a printable minimum (default 0.15 mm at output DPI), never deleted.
+6. **Apply each method only where the design has it.** FLAT patches → solid 100% ink, perfectly flat (std 0, no texture/blotches). LINE/stripe/dot work → crisp. SPRAY/gradient → continuous tone ONLY where the source is actually shaded. A design with no shading gets 0 tone pixels.
+7. **Gradients follow the source per pixel.** Real gradients are irregular (more ink here, less there, sometimes abrupt) — never a uniform/generic ramp. "One shape, multiple gradients": several ink tone channels overprint to build the colour.
+8. **Layer order: darkest ink at the bottom, progressively lighter on top.** Channels are ordered darkest first.
+9. **Channels only.** Deliver every ink as a CHANNEL in PSD and TIF (named `INK_xx <name> #HEX`). No per-ink layers by default; no COMPOSITE layer needed — the channels alone must reproduce the design. (Optional underbase/trap/film plates also as channels.)
+10. **Looks like the source.** The overprint preview must match the source visually (target mean dE76 <= 3 overall; flat regions <= 2), with no stripes, grain, halos or edge-line artefacts.
+
+## 2. What to build
+New module `textile_project/textile/reconstruct.py`, test file `textile_project/tests/test_reconstruct.py`, and a `reconstruct` subcommand registered in `cli.py`:
+`python -m textile reconstruct <img> --out <dir> --colors N [--scale 2] [--dpi 300] [--min-feature-mm 0.15] [--ai-upscale]`
+
+### Pipeline
+1. **Palette + region map.** Real inks in Lab (merge near-duplicates dE<6). Label each pixel FLAT / LINE / SHADED (reuse or improve `auto.py`).
+2. **Colour cleanup.** In FLAT/LINE areas snap pixels to the nearest ink; antialias fringe pixels between two inks go to one of those two, never a third ink. Dark outlines take the true dark ink (median of the line core), not a mid colour.
+3. **Detail map BEFORE any smoothing/scaling.** Detect dots (centre, radius, colour), thin lines (skeleton + width), veins and outlines; mark them protected.
+4. **Shared-boundary vector reconstruction.** Build one label map for all inks; per-label signed-distance fields → smooth → argmax at OUTPUT resolution (or spline-fitted marching-squares contours), so neighbours share exactly one boundary. Keep corners (corner detection). Remove specks/islands that don't exist in the source.
+5. **Primitive redraw.** Dots → perfect circles/ellipses at the measured size; thin lines → smooth strokes of the measured width; thicken to the printable minimum.
+6. **Gradients.** In SHADED areas fit each ink's tone with edge-preserving smoothing (guided/bilateral or a smooth surface fit) that follows the real irregular source amount; render at the output resolution; no banding (use dithering-free 8-bit tone, 16-bit internally if needed).
+7. **Render** at scale x, tiled. Spot plates crisp 1-bit; tone plates 8-bit.
+8. **Export** via the existing `psdout.py`/`package_channels.py`: channels-only PSD + TIF, darkest first, a preview PNG of the overprint, and `report.json`.
+9. **`--ai-upscale` (optional):** pre-upscale with Real-ESRGAN (BSD-3) only if installed; skip cleanly otherwise. Default OFF (AI can invent false detail).
+
+## 3. Verification (compute it for real and put it in report.json)
+- dE76 preview vs source (Lanczos-upscaled source), overall + FLAT/LINE/SHADED.
+- Dot and line-segment counts: source vs output (must be equal).
+- FLAT std = 0; stray tone in FLAT = 0%.
+- Edge smoothness: max deviation of the output contours from the fitted curves; stair-step check at 4x.
+- Output px, DPI, PSD/TIF size, channel list in order, peak RAM, runtime.
+- Images: `compare.jpg` (source | reconstruct), `zoom_edges.jpg` and `zoom_dots.jpg` (4x: source | old `auto` | reconstruct).
+Run it on at least 2 real designs (one flat/dotted floral, one with spray shading) and actually look at the zooms before claiming success.
+
+## 4. Tests (pytest, must pass; paste the real output)
+Synthetic: (a) a low-res jagged circle → smooth round at 4x (low contour deviation); (b) 3px dots on a flat ground → all kept and round; (c) two flat colours with an antialiased edge → no third fringe colour; (d) a 1px line → kept, thickened to the minimum; (e) a smooth irregular gradient → smooth tone plates, no banding; (f) a solid ground → std 0; (g) PSD has channels only, darkest first, no ink layers; (h) output size >= source.
+
+## 5. Hard rules
+- Libraries: numpy, scipy, scikit-image, opencv-python, Pillow, psd-tools, tifffile (already in the project). Licences MIT/BSD/Apache ONLY — no GPL/AGPL. No paid APIs.
+- Don't change the behaviour of `number`, `spray`, `auto`, `--hybrid`. Don't delete or weaken existing tests. All 184 existing tests + the new ones must pass.
+- No junk files (no outputs, caches or venvs committed). No secrets.
+- Never claim a test, build or export passed unless you actually ran it. Report failures honestly.
+
+## 6. Deliverables
+A zip containing: changed/new source files (same folder structure), the full pytest output, report.json + compare/zoom images for the 2 designs, and a short CHANGES.md (what you did, known limitations).
